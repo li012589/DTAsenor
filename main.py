@@ -3,7 +3,6 @@
 import smbus
 import serial
 
-ser = serial.Serial(port='/dev/ttyUSB0',baudrate = 9600,parity=serial.PARITY_NONE,stopbits=serial.STOPBITS_ONE,bytesize=serial.EIGHTBITS,timeout=1)
 I2Cbus = smbus.SMBus(1)
 ADaddress = 0x48
 
@@ -37,13 +36,6 @@ class Message:
         temperture = voltage
         return temperture
     def update(self):
-        #serialLine = ser.readline()
-        #print "ser: "
-        #print(serialLine)
-        #xAngle, yAngle, zAngle = self.processJY901(serialLine)
-        #self.updateValue('xAngle',xAngle)
-        #self.updateValue('yAngle',yAngle)
-        #self.updateValue('zAngle',zAngle)
         I2Cbus.write_byte(ADaddress,0x40)
         distanceRAW = I2Cbus.read_byte(ADaddress)
         I2Cbus.write_byte(ADaddress,0x41)
