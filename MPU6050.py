@@ -1,36 +1,32 @@
-import smbus
+#import os
+#import sys
 import math
 
-# Power management registers
-power_mgmt_1 = 0x6b
-power_mgmt_2 = 0x6c
-address = 0x68
+import serial
 
-Xdata = 0x43
-Ydata = 0x45
-Zdata = 0x47
+jy_sensor = serial.Serial(port="/dev/ttyUSB0", baudrate="9600", timeout=1)
+print(jy_sensor.name)
+while True:
+    data = jy_sensor.read(size=1)
+    if data == b'\x55':
+        print("success!")
+        jy_sensor.read(size=10)
+        break;
+    print("trying", data)
 
-bus = smbus.SMBus(1)
-bus.write_byte_data(address, power_mgmt_1, 0)
-
-def read(address,diff):
-    high = bus.read_byte_data(address, diff)
-    low = bus.read_byte_data(address, diff+1)
-    val = (high << 8) + low
-    if val >= 0x8000:
-        val = -((65535 - val) + 1)
-    val /= 16384.0
-    return val
-
-def getAngle(x,s):
-    return math.degree(math.atan2(x,s))
-
-def main():
-    x = read(address,Xdata)
-    y = read(address,Ydata)
-    z = read(address,Zdata)
-    Yangle = -getAngle(x,math.sqrt(y**2+z**2))
-    Xangle = getAngle(y,math.sqrt(x**2+z**2))
-
-if __name__ == "__main__":
-    main()
+try:
+    while True:
+        data = jy_sensor.read(size=11)
+        if not len(data) == 11:
+            print('byte error:', len(data))
+            break
+        #Angle
+        if data[1] == 83:
+            x = int.from_bytes(data[2:4], byteorder='little')/32768*180
+            y = int.from_bytes(data[4:6], byteorder='little')/32768*180
+            z = int.from_bytes(data[6:8], byteorder='little')/32768*180
+            print("Angle output:{}, {}, {}".format(x, y, z))
+        #Acceleration
+except KeyboardInterrupt:
+    jy_sensor.close()
+    print("close port")
